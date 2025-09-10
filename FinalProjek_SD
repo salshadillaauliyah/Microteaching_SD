@@ -1,0 +1,197 @@
+#include <iostream>
+#include <string>
+#include <algorithm>
+using namespace std;
+
+struct Reservasi {
+    int id;
+    string nama;
+    string tipeKamar;
+    int durasi;
+};
+
+Reservasi reservasi[100];
+int jumlahReservasi = 0;
+
+struct Queue {
+    Reservasi data[100];
+    int depan = -1;
+    int belakang = -1;
+} antrian;
+
+struct Node {
+    Reservasi data;
+    Node* next;
+};
+Node* head = nullptr;
+
+struct Stack {
+    Reservasi data[100];
+    int top = -1;
+} historiPembatalan;
+
+void tambahReservasi() {
+    Reservasi baru;
+    baru.id = jumlahReservasi + 1;
+    cout << "Masukkan nama: ";
+    cin.ignore();
+    getline(cin, baru.nama);
+    cout << "Masukkan tipe kamar (Single/Double/Suite): ";
+    getline(cin, baru.tipeKamar);
+    cout << "Masukkan durasi menginap (hari): ";
+    cin >> baru.durasi;
+
+    if (jumlahReservasi < 100) {
+        reservasi[jumlahReservasi++] = baru;
+
+        Node* newNode = new Node{baru, nullptr};
+        if (!head) {
+            head = newNode;
+        } else {
+            Node* temp = head;
+            while (temp->next) temp = temp->next;
+            temp->next = newNode;
+        }
+
+        cout << "Reservasi berhasil ditambahkan!\n";
+    } else {
+        cout << "Hotel penuh. Menambahkan ke antrian.\n";
+        if (antrian.belakang < 99) {
+            if (antrian.depan == -1) antrian.depan = 0;
+            antrian.data[++antrian.belakang] = baru;
+        } else {
+            cout << "Antrian penuh. Tidak bisa menambah reservasi.\n";
+        }
+    }
+}
+
+void lihatReservasi() {
+    if (jumlahReservasi == 0) {
+        cout << "Belum ada reservasi.\n";
+        return;
+    }
+
+    cout << "Daftar Reservasi:\n";
+    for (int i = 0; i < jumlahReservasi; i++) {
+        cout << "ID: " << reservasi[i].id << ", Nama: " << reservasi[i].nama
+             << ", Tipe Kamar: " << reservasi[i].tipeKamar
+             << ", Durasi: " << reservasi[i].durasi << " hari\n";
+    }
+}
+
+void cariReservasi() {
+    int id;
+    cout << "Masukkan ID reservasi yang dicari: ";
+    cin >> id;
+
+    for (int i = 0; i < jumlahReservasi; i++) {
+        if (reservasi[i].id == id) {
+            cout << "Reservasi ditemukan:\n";
+            cout << "ID: " << reservasi[i].id << ", Nama: " << reservasi[i].nama
+                 << ", Tipe Kamar: " << reservasi[i].tipeKamar
+                 << ", Durasi: " << reservasi[i].durasi << " hari\n";
+            return;
+        }
+    }
+
+    cout << "Reservasi tidak ditemukan.\n";
+}
+
+void hapusReservasi() {
+    int id;
+    cout << "Masukkan ID reservasi yang ingin dihapus: ";
+    cin >> id;
+
+    for (int i = 0; i < jumlahReservasi; i++) {
+        if (reservasi[i].id == id) {
+            // Simpan ke histori pembatalan
+            if (historiPembatalan.top < 99) {
+                historiPembatalan.data[++historiPembatalan.top] = reservasi[i];
+            }
+
+            // Geser data
+            for (int j = i; j < jumlahReservasi - 1; j++) {
+                reservasi[j] = reservasi[j + 1];
+            }
+            jumlahReservasi--;
+
+            cout << "Reservasi berhasil dihapus!\n";
+
+            // Pindahkan dari antrian jika ada
+            if (antrian.depan != -1) {
+                reservasi[jumlahReservasi++] = antrian.data[antrian.depan++];
+                if (antrian.depan > antrian.belakang) {
+                    antrian.depan = antrian.belakang = -1;
+                }
+                cout << "Reservasi dari antrian ditambahkan ke daftar.\n";
+            }
+            return;
+        }
+    }
+
+    cout << "Reservasi tidak ditemukan.\n";
+}
+
+void urutkanReservasi() {
+    sort(reservasi, reservasi + jumlahReservasi, [](Reservasi a, Reservasi b) {
+        return a.nama < b.nama;
+    });
+    cout << "Reservasi berhasil diurutkan berdasarkan nama.\n";
+}
+
+void lihatHistoriPembatalan() {
+    if (historiPembatalan.top == -1) {
+        cout << "Tidak ada histori pembatalan.\n";
+        return;
+    }
+
+    cout << "Histori Pembatalan:\n";
+    for (int i = 0; i <= historiPembatalan.top; i++) {
+        cout << "ID: " << historiPembatalan.data[i].id << ", Nama: " << historiPembatalan.data[i].nama << "\n";
+    }
+}
+
+int main() {
+    int pilihan;
+
+    do {
+        cout << "\nSistem Reservasi Hotel:\n";
+        cout << "1. Tambah Reservasi\n";
+        cout << "2. Lihat Reservasi\n";
+        cout << "3. Cari Reservasi\n";
+        cout << "4. Hapus Reservasi\n";
+        cout << "5. Urutkan Reservasi\n";
+        cout << "6. Lihat Histori Pembatalan\n";
+        cout << "0. Keluar\n";
+        cout << "Pilih menu: ";
+        cin >> pilihan;
+
+        switch (pilihan) {
+            case 1:
+                tambahReservasi();
+                break;
+            case 2:
+                lihatReservasi();
+                break;
+            case 3:
+                cariReservasi();
+                break;
+            case 4:
+                hapusReservasi();
+                break;
+            case 5:
+                urutkanReservasi();
+                break;
+            case 6:
+                lihatHistoriPembatalan();
+                break;
+            case 0:
+                cout << "Keluar dari program.\n";
+                break;
+            default:
+                cout << "Pilihan tidak valid.\n";
+        }
+    } while (pilihan != 0);
+
+    return 0;
+}
